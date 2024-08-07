@@ -1,14 +1,16 @@
-// const path = require('path');
+const path = require('path');
 const express = require('express');
 const bcryptjs = require('bcryptjs');
 const session = require("express-session");
-const KnexSessionStore = require("connect-session-knex")(session);
+const { ConnectSessionKnexStore } = require('connect-session-knex');
+
 
 
 
 const usersRouter = require('./users/users-router.js');
 const authRouter = require('../auth/auth-router.js');
-const dbConnection = require('../database/connection.js');
+const dbConnection = require('../database/db-config.js'); // this must route to the config.js
+const auth = require('../auth/authenticate-middleware.js');
 
 const server = express()
 
@@ -22,7 +24,7 @@ const sessionConfiguration = {
   },
   resave: false,
   saveUninitialized: true, // read docs, it's related to GDPR compliance
-  store: new KnexSessionStore({
+  store: new ConnectSessionKnexStore({
     knex: dbConnection,
     tablename: 'sessions',
     sidfieldname: 'sid',
@@ -36,7 +38,7 @@ server.use(session(sessionConfiguration)); // enables session support
 server.use(express.static(path.join(__dirname, '../client')))
 server.use(express.json())
 
-server.use('/api/users', usersRouter);
+server.use('/api/users', auth, usersRouter);
 server.use('/api/auth', authRouter);
 
 
